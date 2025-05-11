@@ -41,41 +41,37 @@ void rr(Process processes[], int n)
 
     while (1)
     {
-        if (processes[i].burst_time > 0)
+        int done = 1;
+        for (i = 0; i < n; i++)
         {
-            if (processes[i].burst_time > time_quantum)
+            if (processes[i].arrival_time <= time && processes[i].burst_time > 0)
             {
-                processes[i].burst_time -= time_quantum;
-                time += time_quantum;
-            }
-            else
-            {
-                time += processes[i].burst_time;
-                processes[i].burst_time = 0;
+                done = 0;
 
-                processes[i].completion_time = time;
-
-                processes[i].turnaround_time = time;
-                processes[i].waiting_time = processes[i].turnaround_time - processes[i].temp_burst_time;
-
-                total_waiting_time += processes[i].waiting_time;
-                total_turnaround_time += processes[i].turnaround_time;
-
-                completed++;
-                if (completed == n)
+                if (processes[i].burst_time > time_quantum)
                 {
-                    break;
+                    time += time_quantum;
+                    processes[i].burst_time -= time_quantum;
+                }
+                else
+                {
+                    time += processes[i].burst_time;
+                    processes[i].burst_time = 0;
+
+                    processes[i].completion_time = time;
+                    processes[i].turnaround_time = processes[i].completion_time - processes[i].arrival_time;
+                    processes[i].waiting_time = processes[i].turnaround_time - processes[i].temp_burst_time;
+
+                    total_waiting_time += processes[i].waiting_time;
+                    total_turnaround_time += processes[i].turnaround_time;
+
+                    completed++;
                 }
             }
         }
-        if (i == n - 1)
-        {
-            i = 0;
-        }
-        else
-        {
-            i += 1;
-        }
+
+        if (done)
+            break;
     }
 
     processes[0].waiting_time = total_waiting_time;
