@@ -28,56 +28,68 @@ void input_processe(Process Processes[], int n)
     }
 }
 
-void rr(Process processes[], int n)
+void sjf(Process processes[], int n)
 {
-    printf("Enter the time quantum: ");
-    int time_quantum;
-    scanf("%d", &time_quantum);
+    // Create a copy of processes to preserve the original burst times
+    Process p[MAX];
+    for (int i = 0; i < n; i++)
+    {
+        p[i] = processes[i];
+        p[i].burst_time = p[i].temp_burst_time;  // Reset burst time to original
+    }
+
     int time = 0;
     int completed = 0;
-    int i = 0;
     int total_waiting_time = 0;
     int total_turnaround_time = 0;
 
-    while (1)
+    while (completed < n)
     {
-        if (processes[i].burst_time > 0)
+        int shortest_job = -1;
+        int min_burst_time = 9999;
+
+        // Find the process with the smallest burst time among the arrived processes
+        for (int i = 0; i < n; i++)
         {
-            if (processes[i].burst_time > time_quantum)
+            if (p[i].arrival_time <= time && p[i].burst_time > 0)
             {
-                processes[i].burst_time -= time_quantum;
-                time += time_quantum;
-            }
-            else
-            {
-                time += processes[i].burst_time;
-                processes[i].burst_time = 0;
-
-                processes[i].completion_time = time;
-
-                processes[i].turnaround_time = processes[i].completion_time - processes[i].arrival_time;
-                processes[i].waiting_time = processes[i].turnaround_time - processes[i].temp_burst_time;
-
-                total_waiting_time += processes[i].waiting_time;
-                total_turnaround_time += processes[i].turnaround_time;
-
-                completed++;
-                if (completed == n)
+                if (p[i].burst_time < min_burst_time)
                 {
-                    break;
+                    min_burst_time = p[i].burst_time;
+                    shortest_job = i;
                 }
             }
         }
-        if (i == n - 1)
+
+        // If no process is found, increment time
+        if (shortest_job == -1)
         {
-            i = 0;
+            time++;
+            continue;
         }
-        else
-        {
-            i += 1;
-        }
+
+        // Execute the shortest job
+        time += p[shortest_job].burst_time;
+        p[shortest_job].completion_time = time;
+        p[shortest_job].turnaround_time = p[shortest_job].completion_time - p[shortest_job].arrival_time;
+        p[shortest_job].waiting_time = p[shortest_job].turnaround_time - p[shortest_job].temp_burst_time;
+        p[shortest_job].burst_time = 0;  // Mark as completed
+
+        // Update total times
+        total_waiting_time += p[shortest_job].waiting_time;
+        total_turnaround_time += p[shortest_job].turnaround_time;
+        completed++;
     }
 
+    // Copy back to original process array
+    for (int i = 0; i < n; i++)
+    {
+        processes[i].waiting_time = p[i].waiting_time;
+        processes[i].turnaround_time = p[i].turnaround_time;
+        processes[i].completion_time = p[i].completion_time;
+    }
+
+    // Store the total values for calculating averages
     processes[0].waiting_time = total_waiting_time;
     processes[0].turnaround_time = total_turnaround_time;
 }
@@ -101,31 +113,15 @@ void display(Process processes[], int n)
 
 int main()
 {
-    int n, choice;
+    int n;
     Process Processes[MAX];
 
     printf("Enter the number of processes: ");
     scanf("%d", &n);
     input_processe(Processes, n);
-    while (1)
-    {
-        printf("\nEnter the Choice:\n1. Round Robin\n2. Exit\n");
-        scanf("%d", &choice);
-        switch (choice)
-        {
-        case 1:
-            rr(Processes, n);
-            display(Processes, n);
-            break;
-        case 2:
-            printf("Exiting...\n");
-            exit(0);
-            break;
-        default:
-            printf("Invalid choice. Please try again.\n");
-            break;
-        }
-    }
+    
+    sjf(Processes, n);
+    display(Processes, n);
 
     return 0;
 }

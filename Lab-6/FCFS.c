@@ -3,65 +3,72 @@
 
 typedef struct {
     int id;
-    int arrival_time;
-    int burst_time;
-    int waiting_time;
-    int turnaround_time;
+    int arrival;
+    int burst;
+    int waiting;
+    int turnaround;
 } Process;
 
-int main() {
-    int n, avwt = 0, avtat = 0;
-    Process *processes;
-
-    printf("Enter Total Number of processes : ");
-    scanf("%d", &n);
-
-    processes = (Process*)malloc(n * sizeof(Process));
-
-    printf("\n Enter Process Arrival Time and Burst Time \n"); 
-    for(int i = 0; i < n; i++) {
-        processes[i].id = i;
-        printf("P[%d] Arrival Time: ", i);
-        scanf("%d", &processes[i].arrival_time);
-        printf("P[%d] Burst Time: ", i);
-        scanf("%d", &processes[i].burst_time);
-    }
-
-    processes[0].waiting_time = 0;
-    for(int i = 1; i < n; i++) {
-        processes[i].waiting_time = 0;
-        for(int j = 0; j < i; j++) {
-            processes[i].waiting_time += processes[j].burst_time;
-        }
-    }
-
-    printf("\n Process \tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time");
-
-    for(int i = 0; i < n; i++) {
-        processes[i].turnaround_time = processes[i].burst_time + processes[i].waiting_time;
-        avwt += processes[i].waiting_time;
-        avtat += processes[i].turnaround_time;
-        printf("\n P[%d] \t\t %d \t\t %d \t\t %d \t\t %d", processes[i].id, processes[i].arrival_time, processes[i].burst_time, processes[i].waiting_time, processes[i].turnaround_time);
-    }
-
-    avwt /= n;
-    avtat /= n;
-    printf("\n\n Average Waiting Time: %d", avwt); 
-    printf("\n Average Turnaround Time: %d \n", avtat);
-
-    // Print Gantt Chart
+void print_gantt(int *pids, int *starts, int *ends, int n) {
     printf("\nGantt Chart:\n");
-    for(int i = 0; i < n; i++) {
-        printf(" P[%d] ", processes[i].id);
-        if (i < n-1) printf("->");
-    }
-    printf("\n");
+    for(int i=0; i<n; i++) printf("| P%d ", pids[i]);
+    printf("|\n");
+    for(int i=0; i<n; i++) printf("%d    ", starts[i]);
+    printf("%d\n", ends[n-1]);
+}
 
-    for(int i = 0; i < n; i++) {
-        printf(" %d ", processes[i].waiting_time);
-        if (i < n-1) printf("   ");
+void fcfs(Process *p, int n) {
+    int time = 0, *gantt = malloc(n*sizeof(int));
+    int *starts = malloc(n*sizeof(int)), *ends = malloc(n*sizeof(int));
+    
+    for(int i=0; i<n; i++) {
+        if(time < p[i].arrival) time = p[i].arrival;
+        starts[i] = time;
+        gantt[i] = p[i].id;
+        time += p[i].burst;
+        ends[i] = time;
+        p[i].turnaround = ends[i] - p[i].arrival;
+        p[i].waiting = starts[i] - p[i].arrival;
     }
-    printf(" %d\n", processes[n-1].turnaround_time);
+    
+    print_gantt(gantt, starts, ends, n);
+    printf("\nProcess\tArrival\tBurst\tWait\tTAT\n");
+    float avg_w=0, avg_tat=0;
+    for(int i=0; i<n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\n", p[i].id, p[i].arrival, 
+              p[i].burst, p[i].waiting, p[i].turnaround);
+        avg_w += p[i].waiting;
+        avg_tat += p[i].turnaround;
+    }
+    printf("\nAverages: Wait=%.2f TAT=%.2f\n", avg_w/n, avg_tat/n);
+    
+    free(gantt); free(starts); free(ends);
+}
 
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    Process *p = malloc(n*sizeof(Process));
+    
+    for(int i=0; i<n; i++) {
+        printf("Process %d (Arrival Time : ): ", i+1);
+        scanf("%d", &p[i].arrival);
+        printf("Process %d (Burst Time : ", i+1);
+        scanf("%d", &p[i].burst);
+        p[i].id = i+1;
+    }
+    
+    // Sort by arrival time
+    for(int i=0; i<n; i++)
+        for(int j=0; j<n-i-1; j++)
+            if(p[j].arrival > p[j+1].arrival) {
+                Process temp = p[j];
+                p[j] = p[j+1];
+                p[j+1] = temp;
+            }
+    
+    fcfs(p, n);
+    free(p);
     return 0;
 }
