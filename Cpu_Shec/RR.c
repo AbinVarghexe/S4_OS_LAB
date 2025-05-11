@@ -55,7 +55,7 @@ void rr(Process processes[], int n)
 
                 processes[i].completion_time = time;
 
-                processes[i].turnaround_time = processes[i].completion_time - processes[i].arrival_time;
+                processes[i].turnaround_time = time;
                 processes[i].waiting_time = processes[i].turnaround_time - processes[i].temp_burst_time;
 
                 total_waiting_time += processes[i].waiting_time;
